@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- 網站版方舟（老闆 2026-10-08：「先編一版網站版放上去量看看」）。放在 chefsmate.app/ark-play/，跟點餐網站同一個網域。 -->
+  <base href="/ark-play/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="方舟：飛到天空看附近的島">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="方舟">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>方舟</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { margin: 0; height: 100%; background: #10163a; }
+    #ark-loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #f4ecd8; font: 600 15px -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; gap: 10px; z-index: 5; }
+    #ark-loading small { opacity: .7; font-weight: 400; }
+    #ark-timing { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 10;
+      background: rgba(0, 0, 0, .55); color: #fff; font: 12px/1.4 -apple-system, "PingFang TC", sans-serif;
+      padding: 6px 9px; border-radius: 8px; pointer-events: none; display: none; white-space: pre; }
+  </style>
+</head>
+<body>
+  <div id="ark-loading">方舟起飛中…<small id="ark-loading-sec">0.0 秒</small></div>
+  <div id="ark-timing"></div>
+  <script>
+    // 量載入時間：從開網頁到第一個畫面出來幾秒、下載了多少（量完 15 秒自己收起來）
+    // ⭐ 10-09 打開過網站版方舟的瀏覽器：點餐網站上「點自己的飛船＝起飛」才會開（穩定前只給測試的人；web/booking lib/ark/ark_play_gates.ts）
+    try { localStorage.setItem('chefsmate.arkPlay', '1'); } catch (e) {}
+    (function () {
+      var t0 = performance.now(), sec = document.getElementById('ark-loading-sec');
+      var tick = setInterval(function () { sec.textContent = ((performance.now() - t0) / 1000).toFixed(1) + ' 秒'; }, 100);
+      window.addEventListener('flutter-first-frame', function () {
+        clearInterval(tick);
+        var s = (performance.now() / 1000).toFixed(1), bytes = 0, n = 0;
+        performance.getEntriesByType('resource').forEach(function (e) { bytes += e.transferSize || 0; n++; });
+        var nav = performance.getEntriesByType('navigation')[0];
+        if (nav) bytes += nav.transferSize || 0;
+        var cached = bytes < 200000;
+        var el = document.getElementById('ark-timing');
+        el.textContent = '載入 ' + s + ' 秒・下載 ' + (bytes / 1048576).toFixed(1) + ' MB（' + n + ' 個檔）' + (cached ? '\n大多從快取' : '') +
+          '\n' + (navigator.userAgent.indexOf('Line/') >= 0 ? 'LINE 內建瀏覽器' : navigator.userAgent.indexOf('CriOS') >= 0 ? 'iPhone Chrome' : /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone Safari' : /Android/.test(navigator.userAgent) ? 'Android 瀏覽器' : '電腦瀏覽器');
+        el.style.display = 'block';
+        var l = document.getElementById('ark-loading');
+        if (l) l.remove();
+        setTimeout(function () { el.style.display = 'none'; }, 15000);
+      });
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
